@@ -75,9 +75,11 @@ with inner outer = do
   u <- lift (runXmlMonadT s inner)
   returnEither u
 
+(>>>) :: Monad m => XmlMonadT s m t -> XmlMonadT t m a -> XmlMonadT s m a
 (>>>) = flip with
 infixl 1 >>>
 
+(<<<) :: Monad m => XmlMonadT t m a -> XmlMonadT s m t -> XmlMonadT s m a
 (<<<) = with
 infixr 1 <<<
 
