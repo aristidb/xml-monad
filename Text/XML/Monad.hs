@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies, FlexibleContexts #-}
 
 module Text.XML.Monad
 where
@@ -45,24 +45,28 @@ instance Monad m => ExceptionM (XmlMonadT s m) ParseError where
 instance Monad m => RunExceptionM (XmlMonadT s m) ParseError where
     try = derive_try isoXmlMonadT
 
+class (ReaderM m s, ExceptionM m ParseError) => MonadXml m s | m -> s
+
+instance Monad m => MonadXml (XmlMonadT s m) s
+
 runXmlMonadT :: s -> XmlMonadT s m a -> m (Either ParseError a)
 runXmlMonadT r = runReaderT r . runExceptionT . fromXmlMonadT
 
 runXmlMonad :: s -> XmlMonad s a -> Either ParseError a
 runXmlMonad r = runId . runXmlMonadT r
 
-returnEither :: Monad m => Either ParseError a -> XmlMonadT s m a
+returnEither :: ExceptionM m i => Either i a -> m a
 returnEither (Left err) = raise err
 returnEither (Right x)  = return x
 
-maybeRaise :: Monad m => ParseError -> Maybe a -> XmlMonadT s m a
+maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
 maybeRaise err Nothing  = raise err
 maybeRaise _   (Just x) = return x
 
-asksEither :: Monad m => (s -> Either ParseError a) -> XmlMonadT s m a
+asksEither :: MonadXml m s => (s -> Either ParseError a) -> m a
 asksEither f = ask >>= returnEither . f
 
-asksMaybe :: Monad m => ParseError -> (s -> Maybe a) -> XmlMonadT s m a
+asksMaybe :: MonadXml m s => ParseError -> (s -> Maybe a) -> m a
 asksMaybe err f = ask >>= maybeRaise err . f
 
 with :: Monad m => XmlMonadT t m a -> XmlMonadT s m t -> XmlMonadT s m a
@@ -77,143 +81,143 @@ infixl 1 >>>
 (<<<) = with
 infixr 1 <<<
 
-tryMaybe :: Monad m => XmlMonadT s m a -> XmlMonadT s m (Maybe a)
-tryMaybe a = either (const Nothing) Just <$> try a
+tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
+tryMaybe a = either (const Nothing) Just `liftM` try a
 
-tryBool :: Monad m => XmlMonadT s m a -> XmlMonadT s m Bool
-tryBool a = either (const False) (const True) <$> try a
+tryBool :: RunExceptionM m i => m a -> m Bool
+tryBool a = either (const False) (const True) `liftM` try a
 
-parseXML :: (Monad m, LL.XmlSource s) => XmlMonadT s m [L.Content]
+parseXML :: (ReaderM m s, LL.XmlSource s) => m [L.Content]
 parseXML = asks L.parseXML
 
-parseXMLDoc :: (Monad m, LL.XmlSource s) => XmlMonadT s m L.Element
+parseXMLDoc :: (MonadXml m s, LL.XmlSource s) => m L.Element
 parseXMLDoc = asksMaybe InvalidXml L.parseXMLDoc
 
-elName :: Monad m => XmlMonadT L.Element m L.QName
+elName :: ReaderM m L.Element => m L.QName
 elName = asks L.elName
 
-elAttribs :: Monad m => XmlMonadT L.Element m [L.Attr]
+elAttribs :: ReaderM m L.Element => m [L.Attr]
 elAttribs = asks L.elAttribs
 
-elContent :: Monad m => XmlMonadT L.Element m [L.Content]
+elContent :: ReaderM m L.Element => m [L.Content]
 elContent = asks L.elContent
 
-elLine :: Monad m => XmlMonadT L.Element m (Maybe L.Line)
+elLine :: ReaderM m L.Element => m (Maybe L.Line)
 elLine = asks L.elLine
 
-attrKey :: Monad m => XmlMonadT L.Attr m L.QName
+attrKey :: ReaderM m L.Attr => m L.QName
 attrKey = asks L.attrKey
 
-attrVal :: Monad m => XmlMonadT L.Attr m String
+attrVal :: ReaderM m L.Attr => m String
 attrVal = asks L.attrVal
 
-cdVerbatim :: Monad m => XmlMonadT L.CData m L.CDataKind
+cdVerbatim :: ReaderM m L.CData => m L.CDataKind
 cdVerbatim = asks L.cdVerbatim
 
-cdLine :: Monad m => XmlMonadT L.CData m (Maybe L.Line)
+cdLine :: ReaderM m L.CData => m (Maybe L.Line)
 cdLine = asks L.cdLine
 
-cdData :: Monad m => XmlMonadT L.CData m String
+cdData :: ReaderM m L.CData => m String
 cdData = asks L.cdData
 
-qName :: Monad m => XmlMonadT L.QName m String
+qName :: ReaderM m L.QName => m String
 qName = asks L.qName
 
-qURI :: Monad m => XmlMonadT L.QName m (Maybe String)
+qURI :: ReaderM m L.QName => m (Maybe String)
 qURI = asks L.qURI
 
-qPrefix :: Monad m => XmlMonadT L.QName m (Maybe String)
+qPrefix :: ReaderM m L.QName => m (Maybe String)
 qPrefix = asks L.qPrefix
 
-strContent :: Monad m => XmlMonadT L.Element m String
+strContent :: ReaderM m L.Element => m String
 strContent = asks L.strContent
 
-onlyElems :: Monad m => XmlMonadT [L.Content] m [L.Element]
+onlyElems :: ReaderM m [L.Content] => m [L.Element]
 onlyElems = asks L.onlyElems
 
-elChildren :: Monad m => XmlMonadT L.Element m [L.Element]
+elChildren :: ReaderM m L.Element => m [L.Element]
 elChildren = asks L.elChildren
 
-onlyText :: Monad m => XmlMonadT [L.Content] m [L.CData]
+onlyText :: ReaderM m [L.Content] => m [L.CData]
 onlyText = asks L.onlyText
 
-findChildren :: Monad m => L.QName -> XmlMonadT L.Element m [L.Element]
+findChildren :: ReaderM m L.Element => L.QName -> m [L.Element]
 findChildren = asks . L.findChildren
 
-filterChildren :: Monad m => (L.Element -> Bool) -> XmlMonadT L.Element m [L.Element]
+filterChildren :: ReaderM m L.Element => (L.Element -> Bool) -> m [L.Element]
 filterChildren = asks . L.filterChildren
 
-filterChildrenName :: Monad m => (L.QName -> Bool) -> XmlMonadT L.Element m [L.Element]
+filterChildrenName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterChildrenName = asks . L.filterChildrenName
 
-findChild :: Monad m => L.QName -> XmlMonadT L.Element m L.Element
+findChild :: MonadXml m L.Element => L.QName -> m L.Element
 findChild name = asksMaybe (XmlChildNotFoundQ name) (L.findChild name)
 
-filterChild :: Monad m => (L.Element -> Bool) -> XmlMonadT L.Element m L.Element
+filterChild :: MonadXml m L.Element => (L.Element -> Bool) -> m L.Element
 filterChild = asksMaybe XmlChildNotFound . L.filterChild
 
-filterChildName :: Monad m => (L.QName -> Bool) -> XmlMonadT L.Element m L.Element
+filterChildName :: MonadXml m L.Element => (L.QName -> Bool) -> m L.Element
 filterChildName = asksMaybe XmlChildNotFound . L.filterChildName
 
-findElement :: Monad m => L.QName -> XmlMonadT L.Element m L.Element
+findElement :: MonadXml m L.Element => L.QName -> m L.Element
 findElement name = asksMaybe (XmlElementNotFoundQ name) (L.findElement name)
 
-filterElement :: Monad m => (L.Element -> Bool) -> XmlMonadT L.Element m L.Element
+filterElement :: MonadXml m L.Element => (L.Element -> Bool) -> m L.Element
 filterElement = asksMaybe XmlElementNotFound . L.filterElement
 
-filterElementName :: Monad m => (L.QName -> Bool) -> XmlMonadT L.Element m L.Element
+filterElementName :: MonadXml m L.Element => (L.QName -> Bool) -> m L.Element
 filterElementName = asksMaybe XmlElementNotFound . L.filterElementName
 
-findElements :: Monad m => L.QName -> XmlMonadT L.Element m [L.Element]
+findElements :: ReaderM m L.Element => L.QName -> m [L.Element]
 findElements = asks . L.findElements
 
-filterElements :: Monad m => (L.Element -> Bool) -> XmlMonadT L.Element m [L.Element]
+filterElements :: ReaderM m L.Element => (L.Element -> Bool) -> m [L.Element]
 filterElements = asks . L.filterElements
 
-filterElementsName :: Monad m => (L.QName -> Bool) -> XmlMonadT L.Element m [L.Element]
+filterElementsName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterElementsName = asks . L.filterElementsName
 
-findAttr :: Monad m => L.QName -> XmlMonadT L.Element m String
+findAttr :: MonadXml m L.Element => L.QName -> m String
 findAttr name = asksMaybe (XmlAttributeNotFoundQ name) (L.findAttr name)
 
-lookupAttr :: Monad m => L.QName -> XmlMonadT [L.Attr] m String
+lookupAttr :: MonadXml m [L.Attr] => L.QName -> m String
 lookupAttr name = asksMaybe (XmlAttributeNotFoundQ name) (L.lookupAttr name)
 
-findAttrBy :: Monad m => (L.QName -> Bool) -> XmlMonadT L.Element m String
+findAttrBy :: MonadXml m L.Element => (L.QName -> Bool) -> m String
 findAttrBy = asksMaybe XmlAttributeNotFound . L.findAttrBy
 
-lookupAttrBy :: Monad m => (L.QName -> Bool) -> XmlMonadT [L.Attr] m String
+lookupAttrBy :: MonadXml m [L.Attr] => (L.QName -> Bool) -> m String
 lookupAttrBy = asksMaybe XmlAttributeNotFound . L.lookupAttrBy
 
-showTopElement :: Monad m => XmlMonadT L.Element m String
+showTopElement :: ReaderM m L.Element => m String
 showTopElement = asks L.showTopElement
 
-showContent :: Monad m => XmlMonadT L.Content m String
+showContent :: ReaderM m L.Content => m String
 showContent = asks L.showContent
 
-showElement :: Monad m => XmlMonadT L.Element m String
+showElement :: ReaderM m L.Element => m String
 showElement = asks L.showElement
 
-showCData :: Monad m => XmlMonadT L.CData m String
+showCData :: ReaderM m L.CData => m String
 showCData = asks L.showCData
 
-showAttr :: Monad m => XmlMonadT L.Attr m String
+showAttr :: ReaderM m L.Attr => m String
 showAttr = asks L.showAttr
 
-ppTopElement :: Monad m => XmlMonadT L.Element m String
+ppTopElement :: ReaderM m L.Element => m String
 ppTopElement = asks L.ppTopElement
 
-ppContent :: Monad m => XmlMonadT L.Content m String
+ppContent :: ReaderM m L.Content => XmlMonadT L.Content m String
 ppContent = asks L.ppContent
 
-ppElement :: Monad m => XmlMonadT L.Element m String
+ppElement :: ReaderM m L.Element => XmlMonadT L.Element m String
 ppElement = asks L.ppElement
 
-ppcTopElement :: Monad m => L.ConfigPP -> XmlMonadT L.Element m String
+ppcTopElement :: ReaderM m L.Element => L.ConfigPP -> m String
 ppcTopElement = asks . L.ppcTopElement
 
-ppcContent :: Monad m => L.ConfigPP -> XmlMonadT L.Content m String
+ppcContent :: ReaderM m L.Content => L.ConfigPP -> m String
 ppcContent = asks . L.ppcContent
 
-ppcElement :: Monad m => L.ConfigPP -> XmlMonadT L.Element m String
+ppcElement :: ReaderM m L.Element => L.ConfigPP -> m String
 ppcElement = asks . L.ppcElement
