@@ -1,0 +1,2 @@
+* Instances of MonadXml and MonadXmlCompose for suitable MonadLib transformers.
+* Port a few useful XML functions from aws and hxt.
