@@ -49,6 +49,23 @@ class (ReaderM m s, ExceptionM m ParseError) => MonadXml m s | m -> s
 
 instance Monad m => MonadXml (XmlMonadT s m) s
 
+class (MonadXml m t, MonadXml n s) => MonadXmlCompose m n s t | m -> t, n -> s, n t -> m where
+    with :: m a -> n t -> n a
+
+(>>>) :: MonadXmlCompose m n s t => n t -> m a -> n a
+(>>>) = flip with
+infixl 1 >>>
+
+(<<<) :: MonadXmlCompose m n s t => m a -> n t -> n a
+(<<<) = with
+infixr 1 <<<
+
+instance Monad m => MonadXmlCompose (XmlMonadT t m) (XmlMonadT s m) s t where
+    with inner outer = do
+      s <- outer
+      u <- lift (runXmlMonadT s inner)
+      returnEither u
+
 runXmlMonadT :: s -> XmlMonadT s m a -> m (Either ParseError a)
 runXmlMonadT r = runReaderT r . runExceptionT . fromXmlMonadT
 
@@ -68,20 +85,6 @@ asksEither f = ask >>= returnEither . f
 
 asksMaybe :: MonadXml m s => ParseError -> (s -> Maybe a) -> m a
 asksMaybe err f = ask >>= maybeRaise err . f
-
-with :: Monad m => XmlMonadT t m a -> XmlMonadT s m t -> XmlMonadT s m a
-with inner outer = do
-  s <- outer
-  u <- lift (runXmlMonadT s inner)
-  returnEither u
-
-(>>>) :: Monad m => XmlMonadT s m t -> XmlMonadT t m a -> XmlMonadT s m a
-(>>>) = flip with
-infixl 1 >>>
-
-(<<<) :: Monad m => XmlMonadT t m a -> XmlMonadT s m t -> XmlMonadT s m a
-(<<<) = with
-infixr 1 <<<
 
 tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
 tryMaybe a = either (const Nothing) Just `liftM` try a
