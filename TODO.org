@@ -1,3 +1,5 @@
 * Instances of MonadXml and MonadXmlCompose for suitable MonadLib transformers.
 * Port a few useful XML functions from aws and hxt.
 * Split into a few modules.
+* FromParseError class?
+* Module export list.
