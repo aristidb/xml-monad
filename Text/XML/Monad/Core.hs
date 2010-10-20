@@ -18,7 +18,8 @@ data ParseError
     | XmlAttributeNotFound
     | XmlAttributeNotFoundQ L.QName
     | UnexpectedElementNameQ L.QName L.QName
-    | OtherParseError
+    | XmlError String
+    | OtherError String
     deriving (Show)
 
 newtype XmlT s m a = XmlT { fromXmlT :: ExceptionT ParseError (ReaderT s m) a }
