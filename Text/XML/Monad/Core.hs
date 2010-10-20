@@ -17,7 +17,7 @@ data ParseError
     | XmlElementNotFoundQ L.QName
     | XmlAttributeNotFound
     | XmlAttributeNotFoundQ L.QName
-    | UnexpectedElementName String String
+    | UnexpectedElementNameQ L.QName L.QName
     | OtherParseError
     deriving (Show)
 

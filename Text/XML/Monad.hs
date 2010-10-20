@@ -4,6 +4,7 @@ module Text.XML.Monad
 , module Text.XML.Monad.Input
 , module Text.XML.Monad.Proc
 , module Text.XML.Monad.Output
+, module Text.XML.Monad.Name
 )
 where
   
@@ -11,3 +12,4 @@ import Text.XML.Monad.Core
 import Text.XML.Monad.Input
 import Text.XML.Monad.Proc
 import Text.XML.Monad.Output
+import Text.XML.Monad.Name
