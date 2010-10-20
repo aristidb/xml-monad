@@ -48,6 +48,9 @@ instance Monad m => ComposeM (XmlT s m) (XmlT t m) s t where
     mcompose = derive_mcompose isoXmlT isoXmlT
     mapply = derive_mapply isoXmlT isoXmlT
 
+instance (RunM m (Either ParseError a) r) => RunM (XmlT s m) a (s -> r) where
+    runM = derive_runM isoXmlT
+
 runXmlT :: s -> XmlT s m a -> m (Either ParseError a)
 runXmlT r = runReaderT r . runExceptionT . fromXmlT
 
