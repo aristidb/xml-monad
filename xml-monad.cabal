@@ -14,7 +14,9 @@ Cabal-version:       >=1.8
 
 
 Library
-  Exposed-modules:     Text.XML.Monad
+  Exposed-modules:     Text.XML.Monad,
+                       Text.XML.Monad.Core,
+                       Text.XML.Monad.Input
   Build-depends:       base >=4.2 && <5,
                        monadLib ==3.6.*,
                        monadLib-compose ==0.2.*,
