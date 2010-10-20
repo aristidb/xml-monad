@@ -8,6 +8,7 @@ import qualified Text.XML.Light.Lexer as LL
 import           Control.Applicative
 import           MonadLib
 import           MonadLib.Derive
+import           MonadLib.Compose
 
 data ParseError
     = EmptyDocument
@@ -45,26 +46,9 @@ instance Monad m => ExceptionM (XmlT s m) ParseError where
 instance Monad m => RunExceptionM (XmlT s m) ParseError where
     try = derive_try isoXmlT
 
-class (ReaderM m s, ExceptionM m ParseError) => XmlM m s | m -> s
-
-instance Monad m => XmlM (XmlT s m) s
-
-class (XmlM m t, XmlM n s) => XmlMCompose m n s t | m -> t, n -> s, n t -> m where
-    with :: m a -> n t -> n a
-
-(>>>) :: XmlMCompose m n s t => n t -> m a -> n a
-(>>>) = flip with
-infixl 1 >>>
-
-(<<<) :: XmlMCompose m n s t => m a -> n t -> n a
-(<<<) = with
-infixr 1 <<<
-
-instance Monad m => XmlMCompose (XmlT t m) (XmlT s m) s t where
-    with inner outer = do
-      s <- outer
-      u <- lift (runXmlT s inner)
-      returnEither u
+instance Monad m => ComposeM (XmlT s m) (XmlT t m) s t where
+    mcompose = derive_mcompose isoXmlT isoXmlT
+    mapply = derive_mapply isoXmlT isoXmlT
 
 runXmlT :: s -> XmlT s m a -> m (Either ParseError a)
 runXmlT r = runReaderT r . runExceptionT . fromXmlT
@@ -72,18 +56,14 @@ runXmlT r = runReaderT r . runExceptionT . fromXmlT
 runXml :: s -> Xml s a -> Either ParseError a
 runXml r = runId . runXmlT r
 
-returnEither :: ExceptionM m i => Either i a -> m a
-returnEither (Left err) = raise err
-returnEither (Right x)  = return x
-
 maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
 maybeRaise err Nothing  = raise err
 maybeRaise _   (Just x) = return x
 
-asksEither :: XmlM m s => (s -> Either ParseError a) -> m a
-asksEither f = ask >>= returnEither . f
+asksEither :: (ReaderM m s, ExceptionM m e) => (s -> Either e a) -> m a
+asksEither f = ask >>= raises . f
 
-asksMaybe :: XmlM m s => ParseError -> (s -> Maybe a) -> m a
+asksMaybe :: (ReaderM m s, ExceptionM m e) => e -> (s -> Maybe a) -> m a
 asksMaybe err f = ask >>= maybeRaise err . f
 
 tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
@@ -95,7 +75,7 @@ tryBool a = either (const False) (const True) `liftM` try a
 parseXML :: (ReaderM m s, LL.XmlSource s) => m [L.Content]
 parseXML = asks L.parseXML
 
-parseXMLDoc :: (XmlM m s, LL.XmlSource s) => m L.Element
+parseXMLDoc :: (ReaderM m s, ExceptionM m ParseError, LL.XmlSource s) => m L.Element
 parseXMLDoc = asksMaybe InvalidXml L.parseXMLDoc
 
 elName :: ReaderM m L.Element => m L.QName
@@ -155,22 +135,22 @@ filterChildren = asks . L.filterChildren
 filterChildrenName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterChildrenName = asks . L.filterChildrenName
 
-findChild :: XmlM m L.Element => L.QName -> m L.Element
+findChild :: (ReaderM m L.Element, ExceptionM m ParseError) => L.QName -> m L.Element
 findChild name = asksMaybe (XmlChildNotFoundQ name) (L.findChild name)
 
-filterChild :: XmlM m L.Element => (L.Element -> Bool) -> m L.Element
+filterChild :: (ReaderM m L.Element, ExceptionM m ParseError) => (L.Element -> Bool) -> m L.Element
 filterChild = asksMaybe XmlChildNotFound . L.filterChild
 
-filterChildName :: XmlM m L.Element => (L.QName -> Bool) -> m L.Element
+filterChildName :: (ReaderM m L.Element, ExceptionM m ParseError) => (L.QName -> Bool) -> m L.Element
 filterChildName = asksMaybe XmlChildNotFound . L.filterChildName
 
-findElement :: XmlM m L.Element => L.QName -> m L.Element
+findElement :: (ReaderM m L.Element, ExceptionM m ParseError) => L.QName -> m L.Element
 findElement name = asksMaybe (XmlElementNotFoundQ name) (L.findElement name)
 
-filterElement :: XmlM m L.Element => (L.Element -> Bool) -> m L.Element
+filterElement :: (ReaderM m L.Element, ExceptionM m ParseError) => (L.Element -> Bool) -> m L.Element
 filterElement = asksMaybe XmlElementNotFound . L.filterElement
 
-filterElementName :: XmlM m L.Element => (L.QName -> Bool) -> m L.Element
+filterElementName :: (ReaderM m L.Element, ExceptionM m ParseError) => (L.QName -> Bool) -> m L.Element
 filterElementName = asksMaybe XmlElementNotFound . L.filterElementName
 
 findElements :: ReaderM m L.Element => L.QName -> m [L.Element]
@@ -182,16 +162,16 @@ filterElements = asks . L.filterElements
 filterElementsName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterElementsName = asks . L.filterElementsName
 
-findAttr :: XmlM m L.Element => L.QName -> m String
+findAttr :: (ReaderM m L.Element, ExceptionM m ParseError) => L.QName -> m String
 findAttr name = asksMaybe (XmlAttributeNotFoundQ name) (L.findAttr name)
 
-lookupAttr :: XmlM m [L.Attr] => L.QName -> m String
+lookupAttr :: (ReaderM m [L.Attr], ExceptionM m ParseError) => L.QName -> m String
 lookupAttr name = asksMaybe (XmlAttributeNotFoundQ name) (L.lookupAttr name)
 
-findAttrBy :: XmlM m L.Element => (L.QName -> Bool) -> m String
+findAttrBy :: (ReaderM m L.Element, ExceptionM m ParseError) => (L.QName -> Bool) -> m String
 findAttrBy = asksMaybe XmlAttributeNotFound . L.findAttrBy
 
-lookupAttrBy :: XmlM m [L.Attr] => (L.QName -> Bool) -> m String
+lookupAttrBy :: (ReaderM m [L.Attr], ExceptionM m ParseError) => (L.QName -> Bool) -> m String
 lookupAttrBy = asksMaybe XmlAttributeNotFound . L.lookupAttrBy
 
 showTopElement :: ReaderM m L.Element => m String
