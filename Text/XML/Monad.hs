@@ -5,7 +5,6 @@ where
   
 import           Text.XML.Monad.Core
 import qualified Text.XML.Light       as L
-import qualified Text.XML.Light.Lexer as LL
 import           MonadLib
 
 elName :: ReaderM m L.Element => m L.QName
