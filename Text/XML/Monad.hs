@@ -7,42 +7,6 @@ import           Text.XML.Monad.Core
 import qualified Text.XML.Light       as L
 import           MonadLib
 
-elName :: ReaderM m L.Element => m L.QName
-elName = asks L.elName
-
-elAttribs :: ReaderM m L.Element => m [L.Attr]
-elAttribs = asks L.elAttribs
-
-elContent :: ReaderM m L.Element => m [L.Content]
-elContent = asks L.elContent
-
-elLine :: ReaderM m L.Element => m (Maybe L.Line)
-elLine = asks L.elLine
-
-attrKey :: ReaderM m L.Attr => m L.QName
-attrKey = asks L.attrKey
-
-attrVal :: ReaderM m L.Attr => m String
-attrVal = asks L.attrVal
-
-cdVerbatim :: ReaderM m L.CData => m L.CDataKind
-cdVerbatim = asks L.cdVerbatim
-
-cdLine :: ReaderM m L.CData => m (Maybe L.Line)
-cdLine = asks L.cdLine
-
-cdData :: ReaderM m L.CData => m String
-cdData = asks L.cdData
-
-qName :: ReaderM m L.QName => m String
-qName = asks L.qName
-
-qURI :: ReaderM m L.QName => m (Maybe String)
-qURI = asks L.qURI
-
-qPrefix :: ReaderM m L.QName => m (Maybe String)
-qPrefix = asks L.qPrefix
-
 strContent :: ReaderM m L.Element => m String
 strContent = asks L.strContent
 
