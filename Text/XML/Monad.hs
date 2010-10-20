@@ -8,12 +8,6 @@ import qualified Text.XML.Light       as L
 import qualified Text.XML.Light.Lexer as LL
 import           MonadLib
 
-parseXML :: (ReaderM m s, LL.XmlSource s) => m [L.Content]
-parseXML = asks L.parseXML
-
-parseXMLDoc :: (ReaderM m s, ExceptionM m ParseError, LL.XmlSource s) => m L.Element
-parseXMLDoc = asksMaybe InvalidXml L.parseXMLDoc
-
 elName :: ReaderM m L.Element => m L.QName
 elName = asks L.elName
 
