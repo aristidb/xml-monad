@@ -17,6 +17,7 @@ Library
   Exposed-modules:     Text.XML.Monad,
                        Text.XML.Monad.Core,
                        Text.XML.Monad.Input,
+                       Text.XML.Monad.Output,
                        Text.XML.Monad.Proc,
                        Text.XML.Monad.Name
   Build-depends:       base >=4.2 && <5,
