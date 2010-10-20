@@ -22,40 +22,46 @@ data ParseError
     | OtherError String
     deriving (Show)
 
-newtype XmlT s m a = XmlT { fromXmlT :: ExceptionT ParseError (ReaderT s m) a }
+class FromParseError a where
+    fromParseError :: ParseError -> a
+
+instance FromParseError ParseError where
+    fromParseError = id
+
+newtype XmlT e s m a = XmlT { fromXmlT :: ExceptionT e (ReaderT s m) a }
     deriving (Functor, Monad, Applicative)
 
-type Xml s a = XmlT s Id a
+type Xml e s a = XmlT e s Id a
 
-isoXmlT :: Iso (ExceptionT ParseError (ReaderT s m)) (XmlT s m)
+isoXmlT :: Iso (ExceptionT e (ReaderT s m)) (XmlT e s m)
 isoXmlT = Iso XmlT fromXmlT
 
-instance BaseM m n => BaseM (XmlT s m) n where
+instance BaseM m n => BaseM (XmlT e s m) n where
     inBase = derive_inBase isoXmlT
 
-instance MonadT (XmlT s) where
+instance MonadT (XmlT e s) where
     lift = XmlT . lift . lift
 
-instance Monad m => ReaderM (XmlT s m) s where
+instance Monad m => ReaderM (XmlT e s m) s where
     ask = derive_ask isoXmlT
 
-instance Monad m => ExceptionM (XmlT s m) ParseError where
+instance Monad m => ExceptionM (XmlT e s m) e where
     raise = derive_raise isoXmlT
 
-instance Monad m => RunExceptionM (XmlT s m) ParseError where
+instance Monad m => RunExceptionM (XmlT e s m) e where
     try = derive_try isoXmlT
 
-instance Monad m => ComposeM (XmlT s m) (XmlT t m) s t where
+instance Monad m => ComposeM (XmlT e s m) (XmlT e t m) s t where
     mcompose = derive_mcompose isoXmlT isoXmlT
     mapply = derive_mapply isoXmlT isoXmlT
 
-instance (RunM m (Either ParseError a) r) => RunM (XmlT s m) a (s -> r) where
+instance (RunM m (Either e a) r) => RunM (XmlT e s m) a (s -> r) where
     runM = derive_runM isoXmlT
 
-runXmlT :: s -> XmlT s m a -> m (Either ParseError a)
+runXmlT :: s -> XmlT e s m a -> m (Either e a)
 runXmlT r = runReaderT r . runExceptionT . fromXmlT
 
-runXml :: s -> Xml s a -> Either ParseError a
+runXml :: s -> Xml e s a -> Either e a
 runXml r = runId . runXmlT r
 
 maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
