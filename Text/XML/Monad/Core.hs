@@ -1,5 +1,34 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances, FunctionalDependencies, FlexibleContexts #-}
 module Text.XML.Monad.Core
+(
+  -- * Error types
+  XmlError(..)
+, FromXmlError(..)
+  -- * Error handling
+, maybeRaise
+, asksEither
+, asksMaybe
+, tryMaybe
+, tryBool
+  -- * XML monad (transformer) types
+, XmlT(..)
+, Xml
+, runXmlT
+, runXml
+  -- * XML access.
+, elName
+, elAttribs
+, elContent
+, elLine
+, attrKey
+, attrVal
+, cdVerbatim
+, cdLine
+, cdData
+, qName
+, qURI
+, qPrefix
+)
 where
   
 import           Control.Applicative
@@ -30,6 +59,27 @@ class FromXmlError a where
 
 instance FromXmlError XmlError where
     fromXmlError = id
+
+-- | Raise a defined exception for 'Nothing', return 'Just' values.
+maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
+maybeRaise err Nothing  = raise err
+maybeRaise _   (Just x) = return x
+
+-- | Like 'asks' for a function that can return an error, as 'Left'.
+asksEither :: (ReaderM m s, ExceptionM m e) => (s -> Either e a) -> m a
+asksEither f = ask >>= raises . f
+
+-- | Like 'asks' for a function that can return an error, as 'Nothing'.
+asksMaybe :: (ReaderM m s, ExceptionM m e) => e -> (s -> Maybe a) -> m a
+asksMaybe err f = ask >>= maybeRaise err . f
+
+-- | Catch errors (like 'try'), and return 'Nothing' for errors.
+tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
+tryMaybe a = either (const Nothing) Just `liftM` try a
+
+-- | Catch errors (like 'try'), and return 'False' for errors and 'True' for success.
+tryBool :: RunExceptionM m i => m a -> m Bool
+tryBool a = either (const False) (const True) `liftM` try a
 
 -- | Standard Xml reader + exception transformer type.
 newtype XmlT e s m a = XmlT { fromXmlT :: ExceptionT e (ReaderT s m) a }
@@ -70,27 +120,6 @@ runXmlT r = runReaderT r . runExceptionT . fromXmlT
 -- | Run an 'Xml'.
 runXml :: s -> Xml e s a -> Either e a
 runXml r = runId . runXmlT r
-
--- | Raise a defined exception for 'Nothing', return 'Just' values.
-maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
-maybeRaise err Nothing  = raise err
-maybeRaise _   (Just x) = return x
-
--- | Like 'asks' for a function that can return an error, as 'Left'.
-asksEither :: (ReaderM m s, ExceptionM m e) => (s -> Either e a) -> m a
-asksEither f = ask >>= raises . f
-
--- | Like 'asks' for a function that can return an error, as 'Nothing'.
-asksMaybe :: (ReaderM m s, ExceptionM m e) => e -> (s -> Maybe a) -> m a
-asksMaybe err f = ask >>= maybeRaise err . f
-
--- | Catch errors (like 'try'), and return 'Nothing' for errors.
-tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
-tryMaybe a = either (const Nothing) Just `liftM` try a
-
--- | Catch errors (like 'try'), and return 'False' for errors and 'True' for success.
-tryBool :: RunExceptionM m i => m a -> m Bool
-tryBool a = either (const False) (const True) `liftM` try a
 
 elName :: ReaderM m L.Element => m L.QName
 elName = asks L.elName
