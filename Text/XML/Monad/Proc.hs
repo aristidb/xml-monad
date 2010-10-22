@@ -27,23 +27,23 @@ filterChildren = asks . L.filterChildren
 filterChildrenName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterChildrenName = asks . L.filterChildrenName
 
-findChild :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => L.QName -> m L.Element
-findChild name = asksMaybe (fromParseError $ XmlChildNotFoundQ name) (L.findChild name)
+findChild :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => L.QName -> m L.Element
+findChild name = asksMaybe (fromXmlError $ XmlChildNotFoundQ name) (L.findChild name)
 
-filterChild :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => (L.Element -> Bool) -> m L.Element
-filterChild = asksMaybe (fromParseError XmlChildNotFound) . L.filterChild
+filterChild :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.Element -> Bool) -> m L.Element
+filterChild = asksMaybe (fromXmlError XmlChildNotFound) . L.filterChild
 
-filterChildName :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => (L.QName -> Bool) -> m L.Element
-filterChildName = asksMaybe (fromParseError XmlChildNotFound) . L.filterChildName
+filterChildName :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.QName -> Bool) -> m L.Element
+filterChildName = asksMaybe (fromXmlError XmlChildNotFound) . L.filterChildName
 
-findElement :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => L.QName -> m L.Element
-findElement name = asksMaybe (fromParseError $ XmlElementNotFoundQ name) (L.findElement name)
+findElement :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => L.QName -> m L.Element
+findElement name = asksMaybe (fromXmlError $ XmlElementNotFoundQ name) (L.findElement name)
 
-filterElement :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => (L.Element -> Bool) -> m L.Element
-filterElement = asksMaybe (fromParseError XmlElementNotFound) . L.filterElement
+filterElement :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.Element -> Bool) -> m L.Element
+filterElement = asksMaybe (fromXmlError XmlElementNotFound) . L.filterElement
 
-filterElementName :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => (L.QName -> Bool) -> m L.Element
-filterElementName = asksMaybe (fromParseError XmlElementNotFound) . L.filterElementName
+filterElementName :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.QName -> Bool) -> m L.Element
+filterElementName = asksMaybe (fromXmlError XmlElementNotFound) . L.filterElementName
 
 findElements :: ReaderM m L.Element => L.QName -> m [L.Element]
 findElements = asks . L.findElements
@@ -54,14 +54,14 @@ filterElements = asks . L.filterElements
 filterElementsName :: ReaderM m L.Element => (L.QName -> Bool) -> m [L.Element]
 filterElementsName = asks . L.filterElementsName
 
-findAttr :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => L.QName -> m String
-findAttr name = asksMaybe (fromParseError $ XmlAttributeNotFoundQ name) (L.findAttr name)
+findAttr :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => L.QName -> m String
+findAttr name = asksMaybe (fromXmlError $ XmlAttributeNotFoundQ name) (L.findAttr name)
 
-lookupAttr :: (ReaderM m [L.Attr], ExceptionM m e, FromParseError e) => L.QName -> m String
-lookupAttr name = asksMaybe (fromParseError $ XmlAttributeNotFoundQ name) (L.lookupAttr name)
+lookupAttr :: (ReaderM m [L.Attr], ExceptionM m e, FromXmlError e) => L.QName -> m String
+lookupAttr name = asksMaybe (fromXmlError $ XmlAttributeNotFoundQ name) (L.lookupAttr name)
 
-findAttrBy :: (ReaderM m L.Element, ExceptionM m e, FromParseError e) => (L.QName -> Bool) -> m String
-findAttrBy = asksMaybe (fromParseError XmlAttributeNotFound) . L.findAttrBy
+findAttrBy :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.QName -> Bool) -> m String
+findAttrBy = asksMaybe (fromXmlError XmlAttributeNotFound) . L.findAttrBy
 
-lookupAttrBy :: (ReaderM m [L.Attr], ExceptionM m e, FromParseError e) => (L.QName -> Bool) -> m String
-lookupAttrBy = asksMaybe (fromParseError XmlAttributeNotFound) . L.lookupAttrBy
+lookupAttrBy :: (ReaderM m [L.Attr], ExceptionM m e, FromXmlError e) => (L.QName -> Bool) -> m String
+lookupAttrBy = asksMaybe (fromXmlError XmlAttributeNotFound) . L.lookupAttrBy
