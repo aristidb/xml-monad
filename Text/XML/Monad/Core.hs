@@ -6,6 +6,8 @@ module Text.XML.Monad.Core
 , Xml
 , runXmlT
 , runXml
+  -- * Monad functions
+, inList
   -- * XML access.
 , elName
 , elAttribs
@@ -67,6 +69,10 @@ runXmlT r = runReaderT r . runExceptionT . fromXmlT
 -- | Run an 'Xml'.
 runXml :: s -> Xml e s a -> Either e a
 runXml r = runId . runXmlT r
+
+-- | Run a reader inside a list.
+inList :: (ComposeM m n s t, ReaderM n [s]) => m a -> n [a]
+inList m = ask >>= mapM (mapply m)
 
 elName :: ReaderM m L.Element => m L.QName
 elName = asks L.elName
