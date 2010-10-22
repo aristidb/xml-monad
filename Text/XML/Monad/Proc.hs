@@ -9,6 +9,9 @@ import           MonadLib
 strContent :: ReaderM m L.Element => m String
 strContent = asks L.strContent
 
+readContent :: (ReaderM m L.Element, Read a) => m a
+readContent = asks (read . L.strContent)
+
 onlyElems :: ReaderM m [L.Content] => m [L.Element]
 onlyElems = asks L.onlyElems
 
