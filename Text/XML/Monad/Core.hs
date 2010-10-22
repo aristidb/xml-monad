@@ -8,21 +8,24 @@ import           MonadLib
 import           MonadLib.Derive
 import           MonadLib.Compose
 
+-- | XML error type.
 data ParseError
-    = EmptyDocument
-    | InvalidXml
-    | XmlChildNotFound
-    | XmlChildNotFoundQ L.QName
-    | XmlElementNotFound
-    | XmlElementNotFoundQ L.QName
-    | XmlAttributeNotFound
-    | XmlAttributeNotFoundQ L.QName
-    | UnexpectedElementNameQ L.QName L.QName
-    | XmlError String
-    | OtherError String
+    = EmptyDocument                           -- ^ An (invalid) empty input document was observed.
+    | InvalidXml                              -- ^ Invalid XML, general parse error.
+    | XmlChildNotFound                        -- ^ An immediate child element in an XML tree was not found.
+    | XmlChildNotFoundQ L.QName               -- ^ An immediate child element in an XML tree was not found, with name.
+    | XmlElementNotFound                      -- ^ An element in an XML tree was not found.
+    | XmlElementNotFoundQ L.QName             -- ^ An element in an XML tree was not found, with name.
+    | XmlAttributeNotFound                    -- ^ An XML element attribute was not found.
+    | XmlAttributeNotFoundQ L.QName           -- ^ An XML element attribute was not found, with name.
+    | UnexpectedElementNameQ L.QName L.QName  -- ^ An XML element name was different than expected, with actual and expected names.
+    | XmlError String                         -- ^ A general XML error occured.
+    | OtherError String                       -- ^ A general error occured.
     deriving (Show)
 
+-- | An error type that can be constructed from 'ParseError'.
 class FromParseError a where
+    -- | Construct error value.
     fromParseError :: ParseError -> a
 
 instance FromParseError ParseError where
