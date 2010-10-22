@@ -21,6 +21,18 @@ findElementNameU = findElementNameG unqualEq . L.unqual
 findElementNameUI :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => String -> m L.Element
 findElementNameUI = findElementNameG unqualEqI . L.unqual
 
+findElementsNameG :: (ReaderM m L.Element) => (L.QName -> L.QName -> Bool) -> L.QName -> m [L.Element]
+findElementsNameG cmp name = asks $ L.filterElementsName (cmp name)
+
+findElementsName :: (ReaderM m L.Element) => L.QName -> m [L.Element]
+findElementsName = findElementsNameG (==)
+
+findElementsNameU :: (ReaderM m L.Element) => String -> m [L.Element]
+findElementsNameU = findElementsNameG unqualEq . L.unqual
+
+findElementsNameUI :: (ReaderM m L.Element) => String -> m [L.Element]
+findElementsNameUI = findElementsNameG unqualEqI . L.unqual
+
 testElementNameG :: (ReaderM m L.Element, ExceptionM m e, FromXmlError e) => (L.QName -> L.QName -> Bool) -> L.QName -> m ()
 testElementNameG cmp expectedName = do
   actualName <- elName

@@ -1,5 +1,5 @@
 Name:                xml-monad
-Version:             0.1
+Version:             0.2
 Synopsis:            Monadic extensions to the xml package.
 Description:         A monadic interface for xml based on monadLib and monadLib-compose. It provides filter composition, similar to hxt, and a succinct
                      monadic interface.
