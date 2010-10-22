@@ -2,8 +2,8 @@
 module Text.XML.Monad.Proc
 where
   
-import           Text.XML.Monad.Core
-import qualified Text.XML.Light      as L
+import           Text.XML.Monad.Error
+import qualified Text.XML.Light       as L
 import           MonadLib
 
 strContent :: ReaderM m L.Element => m String

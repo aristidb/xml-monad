@@ -3,7 +3,7 @@
 module Text.XML.Monad.Input
 where
   
-import           Text.XML.Monad.Core
+import           Text.XML.Monad.Error
 import           Data.Maybe
 import           MonadLib
 import qualified Text.XML.Light       as L

@@ -3,7 +3,8 @@ module Text.XML.Monad.Name
 where
   
 import           Text.XML.Monad.Core
-import qualified Text.XML.Light      as L
+import           Text.XML.Monad.Error
+import qualified Text.XML.Light       as L
 import           Data.Char
 import           Data.Function
 import           MonadLib
