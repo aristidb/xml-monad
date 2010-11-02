@@ -3,39 +3,39 @@
 module Text.XML.Monad.Output
 where
   
-import qualified Text.XML.Light      as L
-import           MonadLib
+import           Control.Monad.Reader.Class
+import qualified Text.XML.Light             as L
 
-showTopElement :: ReaderM m L.Element => m String
+showTopElement :: MonadReader L.Element m => m String
 showTopElement = asks L.showTopElement
 
-showContent :: ReaderM m L.Content => m String
+showContent :: MonadReader L.Content m => m String
 showContent = asks L.showContent
 
-showElement :: ReaderM m L.Element => m String
+showElement :: MonadReader L.Element m => m String
 showElement = asks L.showElement
 
-showCData :: ReaderM m L.CData => m String
+showCData :: MonadReader L.CData m => m String
 showCData = asks L.showCData
 
-showAttr :: ReaderM m L.Attr => m String
+showAttr :: MonadReader L.Attr m => m String
 showAttr = asks L.showAttr
 
-ppTopElement :: ReaderM m L.Element => m String
+ppTopElement :: MonadReader L.Element m => m String
 ppTopElement = asks L.ppTopElement
 
-ppContent :: ReaderM m L.Content => m String
+ppContent :: MonadReader L.Content m => m String
 ppContent = asks L.ppContent
 
-ppElement :: ReaderM m L.Element => m String
+ppElement :: MonadReader L.Element m => m String
 ppElement = asks L.ppElement
 
-ppcTopElement :: ReaderM m L.Element => L.ConfigPP -> m String
+ppcTopElement :: MonadReader L.Element m => L.ConfigPP -> m String
 ppcTopElement = asks . L.ppcTopElement
 
-ppcContent :: ReaderM m L.Content => L.ConfigPP -> m String
+ppcContent :: MonadReader L.Content m => L.ConfigPP -> m String
 ppcContent = asks . L.ppcContent
 
-ppcElement :: ReaderM m L.Element => L.ConfigPP -> m String
+ppcElement :: MonadReader L.Element m => L.ConfigPP -> m String
 ppcElement = asks . L.ppcElement
 

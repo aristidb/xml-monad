@@ -4,16 +4,20 @@ module Text.XML.Monad.Error
   XmlError(..)
 , FromXmlError(..)
   -- * Error handling
+, raise
 , maybeRaise
+, raises
 , asksEither
 , asksMaybe
+, try
 , tryMaybe
 , tryBool
 )
 where
 
-import           MonadLib
-import qualified Text.XML.Light as L
+import           Control.Monad.Error
+import           Control.Monad.Reader
+import qualified Text.XML.Light       as L
   
 -- | XML error type.
 data XmlError
@@ -28,7 +32,12 @@ data XmlError
     | UnexpectedElementNameQ L.QName L.QName  -- ^ An XML element name was different than expected, with actual and expected names.
     | XmlError String                         -- ^ A general XML error occured.
     | OtherError String                       -- ^ A general error occured.
+    | UnspecifiedError                        -- ^ An unspecified general error occured.
     deriving (Show)
+
+instance Error XmlError where
+    noMsg = UnspecifiedError
+    strMsg = OtherError
 
 -- | An error type that can be constructed from 'XmlError'.
 class FromXmlError a where
@@ -39,22 +48,35 @@ instance FromXmlError XmlError where
     fromXmlError = id
 
 -- | Raise a defined exception for 'Nothing', return 'Just' values.
-maybeRaise :: ExceptionM m i => i -> Maybe a -> m a
-maybeRaise err Nothing  = raise err
+maybeRaise :: MonadError i m => i -> Maybe a -> m a
+maybeRaise err Nothing  = throwError err
 maybeRaise _   (Just x) = return x
 
+-- | Raise an exception.
+raise :: MonadError i m => i -> m a
+raise = throwError
+
+-- | Raise an exception for 'Left', return 'Right' values.
+raises :: MonadError i m => Either i a -> m a
+raises (Left err) = throwError err
+raises (Right x)  = return x
+
 -- | Like 'asks' for a function that can return an error, as 'Left'.
-asksEither :: (ReaderM m s, ExceptionM m e) => (s -> Either e a) -> m a
+asksEither :: (MonadReader s m, MonadError e m) => (s -> Either e a) -> m a
 asksEither f = ask >>= raises . f
 
 -- | Like 'asks' for a function that can return an error, as 'Nothing'.
-asksMaybe :: (ReaderM m s, ExceptionM m e) => e -> (s -> Maybe a) -> m a
+asksMaybe :: (MonadReader s m, MonadError e m) => e -> (s -> Maybe a) -> m a
 asksMaybe err f = ask >>= maybeRaise err . f
 
+-- | Catch errors, and return an 'Left' for errors, 'Right' otherwise.
+try :: MonadError e m => m a -> m (Either e a)
+try m = catchError (liftM Right m) (return . Left)
+
 -- | Catch errors (like 'try'), and return 'Nothing' for errors.
-tryMaybe :: RunExceptionM m i => m a -> m (Maybe a)
+tryMaybe :: MonadError e m => m a -> m (Maybe a)
 tryMaybe a = either (const Nothing) Just `liftM` try a
 
 -- | Catch errors (like 'try'), and return 'False' for errors and 'True' for success.
-tryBool :: RunExceptionM m i => m a -> m Bool
+tryBool :: MonadError e m => m a -> m Bool
 tryBool a = either (const False) (const True) `liftM` try a

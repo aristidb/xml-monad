@@ -1,8 +1,8 @@
 Name:                xml-monad
-Version:             0.2
+Version:             0.3
 Synopsis:            Monadic extensions to the xml package.
-Description:         A monadic interface for xml based on monadLib and monadLib-compose. It provides filter composition, similar to hxt, and a succinct
-                     monadic interface.
+Description:         A monadic interface for xml based on transformers and transformers-compose. It provides filter composition, similar to hxt, and a
+                     succinct monadic interface.
 Homepage:            http://github.com/aristidb/xml-monad
 License:             BSD3
 License-file:        LICENSE
@@ -24,8 +24,9 @@ Library
                        Text.XML.Monad.Name,
                        Text.XML.Monad.Error
   Build-depends:       base >=4.2 && <5,
-                       monadLib ==3.6.*,
-                       monadLib-compose ==0.2.*,
+                       transformers ==0.2.*,
+                       transformers-compose ==0.1.*,
+                       monads-fd ==0.1.*,
                        xml ==1.3.*
   -- Other-modules:       
 

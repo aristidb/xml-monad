@@ -25,87 +25,81 @@ module Text.XML.Monad.Core
 where
 
 import           Control.Applicative
-import qualified Text.XML.Light       as L
-import           MonadLib
-import           MonadLib.Derive
-import           MonadLib.Compose
+import           Control.Monad.Compose.Class
+import           Control.Monad.Error
+import           Control.Monad.Reader
+import           Data.Functor.Identity
+import qualified Text.XML.Light              as L
 
 -- | Standard Xml reader + exception transformer type.
-newtype XmlT e s m a = XmlT { fromXmlT :: ExceptionT e (ReaderT s m) a }
-    deriving (Functor, Monad, Applicative)
+newtype XmlT e s m a = XmlT { fromXmlT :: ErrorT e (ReaderT s m) a }
+    deriving (Functor, Monad, Applicative, MonadPlus, Alternative)
 
 -- | Standard Xml reader + exception monadic type.
-type Xml e s a = XmlT e s Id a
+type Xml e s a = XmlT e s Identity a
 
-isoXmlT :: Iso (ExceptionT e (ReaderT s m)) (XmlT e s m)
-isoXmlT = Iso XmlT fromXmlT
-
-instance BaseM m n => BaseM (XmlT e s m) n where
-    inBase = derive_inBase isoXmlT
-
-instance MonadT (XmlT e s) where
+instance Error e => MonadTrans (XmlT e s) where
     lift = XmlT . lift . lift
 
-instance Monad m => ReaderM (XmlT e s m) s where
-    ask = derive_ask isoXmlT
+instance (Monad m, Error e) => MonadReader s (XmlT e s m) where
+    ask = XmlT ask
+    local f m = XmlT $ local f (fromXmlT m)
 
-instance Monad m => ExceptionM (XmlT e s m) e where
-    raise = derive_raise isoXmlT
+instance (Monad m, Error e) => MonadError e (XmlT e s m) where
+    throwError e = XmlT $ throwError e
+    catchError m f = XmlT $ catchError (fromXmlT m) (fromXmlT . f)
 
-instance Monad m => RunExceptionM (XmlT e s m) e where
-    try = derive_try isoXmlT
+instance (Monad m, Error e) => MonadCompose (XmlT e s m) (XmlT e t m) s t where
+    mcompose m n = XmlT $ mcompose (fromXmlT m) (fromXmlT n)
 
-instance Monad m => ComposeM (XmlT e s m) (XmlT e t m) s t where
-    mcompose = derive_mcompose isoXmlT isoXmlT
-    mapply = derive_mapply isoXmlT isoXmlT
-
-instance (RunM m (Either e a) r) => RunM (XmlT e s m) a (s -> r) where
-    runM = derive_runM isoXmlT
+instance (MonadIO m, Error e) => MonadIO (XmlT e s m) where
+    liftIO = XmlT . liftIO
 
 -- | Run an 'XmlT'.
-runXmlT :: s -> XmlT e s m a -> m (Either e a)
-runXmlT r = runReaderT r . runExceptionT . fromXmlT
+runXmlT :: XmlT e s m a -> s -> m (Either e a)
+runXmlT = runReaderT . runErrorT . fromXmlT
 
 -- | Run an 'Xml'.
-runXml :: s -> Xml e s a -> Either e a
-runXml r = runId . runXmlT r
+runXml :: Xml e s a -> s -> Either e a
+runXml = runIdentity .: runXmlT
+    where (.:) = (.).(.)
 
 -- | Run a reader inside a list.
-inList :: (ComposeM m n s t, ReaderM n [s]) => m a -> n [a]
+inList :: (MonadCompose m n s t, MonadReader [s] n) => m a -> n [a]
 inList m = ask >>= mapM (mapply m)
 
-elName :: ReaderM m L.Element => m L.QName
+elName :: MonadReader L.Element m => m L.QName
 elName = asks L.elName
 
-elAttribs :: ReaderM m L.Element => m [L.Attr]
+elAttribs :: MonadReader L.Element m => m [L.Attr]
 elAttribs = asks L.elAttribs
 
-elContent :: ReaderM m L.Element => m [L.Content]
+elContent :: MonadReader L.Element m => m [L.Content]
 elContent = asks L.elContent
 
-elLine :: ReaderM m L.Element => m (Maybe L.Line)
+elLine :: MonadReader L.Element m => m (Maybe L.Line)
 elLine = asks L.elLine
 
-attrKey :: ReaderM m L.Attr => m L.QName
+attrKey :: MonadReader L.Attr m => m L.QName
 attrKey = asks L.attrKey
 
-attrVal :: ReaderM m L.Attr => m String
+attrVal :: MonadReader L.Attr m => m String
 attrVal = asks L.attrVal
 
-cdVerbatim :: ReaderM m L.CData => m L.CDataKind
+cdVerbatim :: MonadReader L.CData m => m L.CDataKind
 cdVerbatim = asks L.cdVerbatim
 
-cdLine :: ReaderM m L.CData => m (Maybe L.Line)
+cdLine :: MonadReader L.CData m => m (Maybe L.Line)
 cdLine = asks L.cdLine
 
-cdData :: ReaderM m L.CData => m String
+cdData :: MonadReader L.CData m => m String
 cdData = asks L.cdData
 
-qName :: ReaderM m L.QName => m String
+qName :: MonadReader L.QName m => m String
 qName = asks L.qName
 
-qURI :: ReaderM m L.QName => m (Maybe String)
+qURI :: MonadReader L.QName m => m (Maybe String)
 qURI = asks L.qURI
 
-qPrefix :: ReaderM m L.QName => m (Maybe String)
+qPrefix :: MonadReader L.QName m => m (Maybe String)
 qPrefix = asks L.qPrefix
