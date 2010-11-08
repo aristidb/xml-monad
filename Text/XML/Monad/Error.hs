@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Text.XML.Monad.Error
 (
   -- * Error types
@@ -17,6 +18,8 @@ where
 
 import           Control.Monad.Error
 import           Control.Monad.Reader
+import           Data.Typeable
+import qualified Control.Exception    as C
 import qualified Text.XML.Light       as L
   
 -- | XML error type.
@@ -33,11 +36,13 @@ data XmlError
     | XmlError String                         -- ^ A general XML error occured.
     | OtherError String                       -- ^ A general error occured.
     | UnspecifiedError                        -- ^ An unspecified general error occured.
-    deriving (Show)
+    deriving (Show, Typeable)
 
 instance Error XmlError where
     noMsg = UnspecifiedError
     strMsg = OtherError
+
+instance C.Exception XmlError
 
 -- | An error type that can be constructed from 'XmlError'.
 class FromXmlError a where
