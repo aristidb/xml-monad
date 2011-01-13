@@ -6,10 +6,15 @@ module Text.XML.Monad.Error
 , FromXmlError(..)
   -- * Error handling
 , raise
+, raiseXml
 , maybeRaise
+, maybeRaiseXml
 , raises
+, raisesXml
 , asksEither
+, asksEitherXml
 , asksMaybe
+, asksMaybeXml
 , try
 , tryMaybe
 , tryBool
@@ -57,22 +62,43 @@ maybeRaise :: MonadError i m => i -> Maybe a -> m a
 maybeRaise err Nothing  = throwError err
 maybeRaise _   (Just x) = return x
 
+-- | Raise a defined XML exception for 'Nothing', return 'Just' values.
+maybeRaiseXml :: (MonadError i m, FromXmlError i) => XmlError -> Maybe a -> m a
+maybeRaiseXml = maybeRaise . fromXmlError
+
 -- | Raise an exception.
 raise :: MonadError i m => i -> m a
 raise = throwError
+
+-- | Raise an XML exception.
+raiseXml :: (MonadError i m, FromXmlError i) => XmlError -> m a
+raiseXml = raise . fromXmlError
 
 -- | Raise an exception for 'Left', return 'Right' values.
 raises :: MonadError i m => Either i a -> m a
 raises (Left err) = throwError err
 raises (Right x)  = return x
 
+-- | Raise an exception for 'Left', return 'Right' values.
+raisesXml :: (MonadError i m, FromXmlError i) => Either XmlError a -> m a
+raisesXml (Left err) = raiseXml err
+raisesXml (Right x)  = return x
+
 -- | Like 'asks' for a function that can return an error, as 'Left'.
 asksEither :: (MonadReader s m, MonadError e m) => (s -> Either e a) -> m a
 asksEither f = ask >>= raises . f
 
+-- | Like 'asks' for a function that can return an XML error, as 'Left'.
+asksEitherXml :: (MonadReader s m, MonadError e m, FromXmlError e) => (s -> Either XmlError a) -> m a
+asksEitherXml f = ask >>= raisesXml . f
+
 -- | Like 'asks' for a function that can return an error, as 'Nothing'.
 asksMaybe :: (MonadReader s m, MonadError e m) => e -> (s -> Maybe a) -> m a
 asksMaybe err f = ask >>= maybeRaise err . f
+
+-- | Like 'asks' for a function that can return an error, as 'Nothing'.
+asksMaybeXml :: (MonadReader s m, MonadError e m, FromXmlError e) => XmlError -> (s -> Maybe a) -> m a
+asksMaybeXml err f = ask >>= maybeRaiseXml err . f
 
 -- | Catch errors, and return an 'Left' for errors, 'Right' otherwise.
 try :: MonadError e m => m a -> m (Either e a)

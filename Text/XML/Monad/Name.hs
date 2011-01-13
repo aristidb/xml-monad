@@ -11,7 +11,7 @@ import           Text.XML.Monad.Error
 import qualified Text.XML.Light             as L
 
 findElementNameG :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.QName -> L.QName -> Bool) -> L.QName -> m L.Element
-findElementNameG cmp name = asksMaybe (fromXmlError $ XmlElementNotFoundQ name) $ L.filterElementName (cmp name)
+findElementNameG cmp name = asksMaybeXml (XmlElementNotFoundQ name) $ L.filterElementName (cmp name)
 
 findElementName :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => L.QName -> m L.Element
 findElementName = findElementNameG (==)
@@ -39,7 +39,7 @@ testElementNameG cmp expectedName = do
   actualName <- elName
   case expectedName `cmp` actualName of
     True -> return ()
-    False -> raise (fromXmlError $ UnexpectedElementNameQ actualName expectedName)
+    False -> raiseXml (UnexpectedElementNameQ actualName expectedName)
     
 testElementName :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => L.QName -> m ()
 testElementName = testElementNameG (==)

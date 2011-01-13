@@ -17,5 +17,5 @@ parseXML = asks L.parseXML
 parseXMLDoc :: (MonadReader s m, MonadError e m, FromXmlError e, LL.XmlSource s) => m L.Element
 parseXMLDoc = do
   x <- ask
-  when (isNothing $ LL.uncons x) $ raise (fromXmlError EmptyDocument)
-  maybeRaise (fromXmlError InvalidXml) $ L.parseXMLDoc x
+  when (isNothing $ LL.uncons x) $ raiseXml EmptyDocument
+  maybeRaiseXml InvalidXml $ L.parseXMLDoc x

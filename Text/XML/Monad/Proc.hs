@@ -32,22 +32,22 @@ filterChildrenName :: MonadReader L.Element m => (L.QName -> Bool) -> m [L.Eleme
 filterChildrenName = asks . L.filterChildrenName
 
 findChild :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => L.QName -> m L.Element
-findChild name = asksMaybe (fromXmlError $ XmlChildNotFoundQ name) (L.findChild name)
+findChild name = asksMaybeXml (XmlChildNotFoundQ name) (L.findChild name)
 
 filterChild :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.Element -> Bool) -> m L.Element
-filterChild = asksMaybe (fromXmlError XmlChildNotFound) . L.filterChild
+filterChild = asksMaybeXml XmlChildNotFound . L.filterChild
 
 filterChildName :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.QName -> Bool) -> m L.Element
-filterChildName = asksMaybe (fromXmlError XmlChildNotFound) . L.filterChildName
+filterChildName = asksMaybeXml XmlChildNotFound . L.filterChildName
 
 findElement :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => L.QName -> m L.Element
-findElement name = asksMaybe (fromXmlError $ XmlElementNotFoundQ name) (L.findElement name)
+findElement name = asksMaybeXml (XmlElementNotFoundQ name) (L.findElement name)
 
 filterElement :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.Element -> Bool) -> m L.Element
-filterElement = asksMaybe (fromXmlError XmlElementNotFound) . L.filterElement
+filterElement = asksMaybeXml XmlElementNotFound . L.filterElement
 
 filterElementName :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.QName -> Bool) -> m L.Element
-filterElementName = asksMaybe (fromXmlError XmlElementNotFound) . L.filterElementName
+filterElementName = asksMaybeXml XmlElementNotFound . L.filterElementName
 
 findElements :: MonadReader L.Element m => L.QName -> m [L.Element]
 findElements = asks . L.findElements
@@ -59,13 +59,13 @@ filterElementsName :: MonadReader L.Element m => (L.QName -> Bool) -> m [L.Eleme
 filterElementsName = asks . L.filterElementsName
 
 findAttr :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => L.QName -> m String
-findAttr name = asksMaybe (fromXmlError $ XmlAttributeNotFoundQ name) (L.findAttr name)
+findAttr name = asksMaybeXml (XmlAttributeNotFoundQ name) (L.findAttr name)
 
 lookupAttr :: (MonadReader [L.Attr] m, MonadError e m, FromXmlError e) => L.QName -> m String
-lookupAttr name = asksMaybe (fromXmlError $ XmlAttributeNotFoundQ name) (L.lookupAttr name)
+lookupAttr name = asksMaybeXml (XmlAttributeNotFoundQ name) (L.lookupAttr name)
 
 findAttrBy :: (MonadReader L.Element m, MonadError e m, FromXmlError e) => (L.QName -> Bool) -> m String
-findAttrBy = asksMaybe (fromXmlError XmlAttributeNotFound) . L.findAttrBy
+findAttrBy = asksMaybeXml XmlAttributeNotFound . L.findAttrBy
 
 lookupAttrBy :: (MonadReader [L.Attr] m, MonadError e m, FromXmlError e) => (L.QName -> Bool) -> m String
-lookupAttrBy = asksMaybe (fromXmlError XmlAttributeNotFound) . L.lookupAttrBy
+lookupAttrBy = asksMaybeXml XmlAttributeNotFound . L.lookupAttrBy
