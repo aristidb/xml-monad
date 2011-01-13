@@ -29,18 +29,22 @@ import qualified Text.XML.Light       as L
   
 -- | XML error type.
 data XmlError
-    = EmptyDocument                           -- ^ An (invalid) empty input document was observed.
-    | InvalidXml                              -- ^ Invalid XML, general parse error.
-    | XmlChildNotFound                        -- ^ An immediate child element in an XML tree was not found.
-    | XmlChildNotFoundQ L.QName               -- ^ An immediate child element in an XML tree was not found, with name.
-    | XmlElementNotFound                      -- ^ An element in an XML tree was not found.
-    | XmlElementNotFoundQ L.QName             -- ^ An element in an XML tree was not found, with name.
-    | XmlAttributeNotFound                    -- ^ An XML element attribute was not found.
-    | XmlAttributeNotFoundQ L.QName           -- ^ An XML element attribute was not found, with name.
-    | UnexpectedElementNameQ L.QName L.QName  -- ^ An XML element name was different than expected, with actual and expected names.
-    | XmlError String                         -- ^ A general XML error occured.
-    | OtherError String                       -- ^ A general error occured.
-    | UnspecifiedError                        -- ^ An unspecified general error occured.
+    = EmptyDocument                            -- ^ An (invalid) empty input document was observed.
+    | InvalidXml                               -- ^ Invalid XML, general parse error.
+    | XmlChildNotFound                         -- ^ An immediate child element in an XML tree was not found.
+    | XmlChildNotFoundQ L.QName                -- ^ An immediate child element in an XML tree was not found, with name.
+    | XmlElementNotFound                       -- ^ An element in an XML tree was not found.
+    | XmlElementNotFoundQ L.QName              -- ^ An element in an XML tree was not found, with name.
+    | XmlAttributeNotFound                     -- ^ An XML element attribute was not found.
+    | XmlAttributeNotFoundQ L.QName            -- ^ An XML element attribute was not found, with name.
+    | UnexpectedElementNameQ L.QName L.QName   -- ^ An XML element name was different than expected, with actual and expected names.
+    | UnexpectedElementContentQ String String  -- ^ An XML element content was different than expected, with actual and expected contents.
+    | UnexpectedAttributeNameQ L.QName L.QName -- ^ An XML element attribute name was different than expected, with actual and expected names.
+    | UnexpectedAttributeValueQ String String  -- ^ An XML element attribute values was different than expected, with actual and expected values.
+    | XmlError String                          -- ^ A general XML error occured.
+    | EncodingError String                     -- ^ Data was encoded wrongly.
+    | OtherError String                        -- ^ A general error occured.
+    | UnspecifiedError                         -- ^ An unspecified general error occured.
     deriving (Show, Typeable)
 
 instance Error XmlError where
